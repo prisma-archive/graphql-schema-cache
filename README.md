@@ -7,7 +7,9 @@ A decoupled schema delegate for usage in graphql.js resolvers.
 yarn add graphql-delegate
 ```
 
-## API
+## Usage
+
+### API
 
 ```ts
 import * as express from 'express'
@@ -83,3 +85,9 @@ async function run() {
 
 run().catch(console.error.bind(console))
 ```
+
+### Batching
+
+#### Array-based batching
+
+#### Alias-based batching
