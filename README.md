@@ -1,10 +1,10 @@
-# graphql-delegate
-A decoupled schema delegate for usage in graphql.js resolvers.
+# graphql-remote
+A toolbelt for creating remote GraphQL schemas.
 
 ## Install
 
 ```sh
-yarn add graphql-delegate
+yarn add graphql-remote
 ```
 
 ## Usage
@@ -12,82 +12,73 @@ yarn add graphql-delegate
 ### API
 
 ```ts
-import * as express from 'express'
-import * as cors from 'cors'
-import * as bodyParser from 'body-parser'
-import expressPlayground from 'graphql-playground-middleware-express'
-import { graphqlExpress } from 'apollo-server-express'
-import * as morgan from 'morgan'
-import { HttpLink } from 'apollo-link-http'
-import fetch from 'node-fetch'
-import { Stack } from 'graphql-stack'
-import { Delegate } from 'graphql-delegate'
+import { GraphQLServer } from 'graphql-yoga'
+import { fetchTypeDefs, RemoteSchema, collectTypeDefs, GraphcoolLink } from 'graphql-remote-tmp'
+import * as jwt from 'jsonwebtoken'
 
 async function run() {
-  const app = express()
-  const link = new HttpLink({
-    uri: process.env.GRAPHQL_ENDPOINT,
-    fetch,
-    headers: { Authorization: `Bearer ${process.env.ADMIN_TOKEN}` },
-  })
-  const delegate = new Delegate(link)
-  // initializes the remote schema
-  await delegate.init()
 
-  const typeDefs = `
+  const makeLink = () => new GraphcoolLink(process.env.GRAPHCOOL_SERVICE_ID, process.env.GRAPHCOOL_TOKEN)
+
+  const graphcoolTypeDefs = await fetchTypeDefs(makeLink())
+
+  const typeDefs = collectTypeDefs(graphcoolTypeDefs, `
     type Query {
-      viewer: Viewer
-    }
-
-    type Viewer {
       me: User
     }
-  `
-  // gets the `User` type from the Graphcool schema
-  const allTypes = delegate.extractMissingTypes(typeDefs)
+    type Subscription {
+      Post: PostSubscriptionPayload
+    }
+    type Post {
+      id: ID!
+      title: String!
+      secret: Boolean
+      extra: String
+      allPosts: [Post!]!
+      comments(filter: CommentFilter): [Comment!]
+    }
+    
+    input CommentFilter {
+      text_not: String
+    }
+  `)
 
-  const stack = new Stack({ typeDefs: allTypes })
-
-  // middlewares can be added here
-  // app.use(caching())
-  // app.use(metrics())
-  stack.use({
+  const resolvers = {
     Query: {
-      viewer: ({}),
+      me: (parent, args, ctx, info) => {
+        const token = ctx.request.get('Authorization').replace('Bearer ', '')
+        const { userId } = jwt.verify(token, process.env.JWT_SECRET!) as {
+          userId: string
+        }
+        return ctx.graphcool.delegateQuery('User', { id: userId }, {}, info)
+      },
     },
-    Viewer: {
-      me: async function me({context, info}) {
-        const token = context.req.get('Authorization').replace('Bearer ', '')
-        const { userId } = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
-      
-        // available through setting on context in graphqlExpress
-        return context.delegate('query', 'User', { id: userId }, context, info)
+    Post: {
+      title: (parent) =>  {
+        return parent.title + ' - Post Title'
+      },
+      extra: () => 'extra field',
+      allPosts: (_, _2, ctx, info) => {
+        return ctx.graphcool.delegateQuery('allPosts', {}, {}, info)
       }
     },
+    Subscription: {
+      Post: {
+        subscribe: async (parent, args, ctx, info) => {
+          return ctx.graphcool.delegateSubscription('Post', args, ctx, info)
+        },
+      },
+    },
+  }
+
+  const server = new GraphQLServer({
+    typeDefs,
+    resolvers,
+    context: params => ({ ...params, graphcool: new RemoteSchema(makeLink()) }),
   })
 
-  const schema = stack.getSchema()
-
-  app.use(
-    '/graphql',
-    cors(),
-    bodyParser.json(),
-    graphqlExpress(req => ({ schema, context: { req, delegate: delegate.getDelegator() } })),
-  )
-  app.use(morgan('tiny'))
-  app.use('/playground', expressPlayground({ endpoint: '/graphql' }))
-  app.listen(3000, () =>
-    console.log(
-      'Server running. Open http://localhost:3000/playground to run queries.',
-    ),
-  )
+  server.start().then(() => console.log('Server is running on :4000'))
 }
 
-run().catch(console.error.bind(console))
+run()
 ```
-
-### Batching
-
-#### Array-based batching
-
-#### Alias-based batching
