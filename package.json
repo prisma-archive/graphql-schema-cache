@@ -1,6 +1,6 @@
 {
-  "name": "graphql-delegate",
-  "version": "0.1.2",
+  "name": "graphql-remote",
+  "version": "0.0.1-demo3",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "typescript": {
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "apollo-link": "^1.0.0",
+    "graphql-tools": "^2.7.2",
     "lodash": "^4.17.4"
   },
   "devDependencies": {

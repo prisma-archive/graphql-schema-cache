@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@types/graphql@^0.11.5":
-  version "0.11.5"
-  resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-0.11.5.tgz#e70f051e80b299be5b12f7e60d962f30c9596072"
+"@types/graphql@^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0":
+  version "0.11.6"
+  resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-0.11.6.tgz#5063e6f7adb66f746a5c73d1ddb3ed3d1361f0a1"
 
 "@types/lodash@^4.14.83":
   version "4.14.83"
@@ -26,8 +26,8 @@ apollo-utilities@^0.2.0-beta.0:
   resolved "https://registry.yarnpkg.com/apollo-utilities/-/apollo-utilities-0.2.0-rc.3.tgz#7bd93be0f587f20c5b46e21880272e305759fdc2"
 
 apollo-utilities@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/apollo-utilities/-/apollo-utilities-1.0.1.tgz#34b4df0bd6ed71d0afaa7c62489173dca5d07e92"
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/apollo-utilities/-/apollo-utilities-1.0.2.tgz#bcf348a7e613e82e2624ddb5be2b9f6bf1259c6d"
 
 deprecated-decorator@^0.1.6:
   version "0.1.6"

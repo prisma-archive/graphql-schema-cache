@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "start": "ts-node ."
+  },
+  "dependencies": {
+    "@types/node-fetch": "^1.6.7",
+    "apollo-link": "^1.0.3",
+    "apollo-link-http": "^1.2.0",
+    "graphql-delegate": "^0.1.2",
+    "graphql-remote": "^0.0.1-demo3",
+    "graphql-yoga": "^0.0.7",
+    "node-fetch": "^1.7.3"
+  }
+}
