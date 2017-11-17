@@ -1,5 +1,5 @@
 # graphql-remote
-A toolbelt for creating remote GraphQL schemas.
+A toolbelt for creating remote GraphQL schemas with built-in subscriptions and dataloader support.
 
 ## Install
 
