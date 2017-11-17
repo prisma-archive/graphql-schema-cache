@@ -1,0 +1,11 @@
+{
+  "name": "examples",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "graphql-remote-tmp": "^0.0.4-alpha.21",
+    "graphql-yoga": "^0.1.0",
+    "jsonwebtoken": "^8.1.0"
+  }
+}
