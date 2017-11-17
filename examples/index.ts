@@ -7,7 +7,6 @@ async function run() {
   const makeLink = () => new HttpLink({
     uri: 'https://api.graph.cool/simple/v1/cizfapt9y2jca01393hzx96w9',
     fetch,
-    headers: { Authorization: `Bearer ${process.env.ADMIN_TOKEN}` },
   })
 
   const graphcoolTypeDefs = await fetchTypeDefs(makeLink())
