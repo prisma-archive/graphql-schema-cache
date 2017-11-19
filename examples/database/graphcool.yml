@@ -1,4 +1,4 @@
-types: ./types.graphql
+types: ./database.graphql
 
 permissions:
   - operation: "*"
