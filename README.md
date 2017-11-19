@@ -13,7 +13,7 @@ yarn add graphql-remote
 
 ```ts
 import { GraphQLServer } from 'graphql-yoga'
-import { fetchTypeDefs, RemoteSchema, collectTypeDefs, GraphcoolLink } from 'graphql-remote-tmp'
+import { fetchTypeDefs, RemoteSchema, collectTypeDefs, GraphcoolLink } from 'graphql-remote'
 import * as jwt from 'jsonwebtoken'
 
 async function run() {
