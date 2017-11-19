@@ -82,3 +82,6 @@ async function run() {
 
 run()
 ```
+
+## Credits
+`graphql-remote` is an extension of the awesome [`graphql-tools`](https://github.com/apollographql/graphql-tools)
