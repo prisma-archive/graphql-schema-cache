@@ -114,8 +114,8 @@ export class RemoteSchema {
       operation,
       info.fieldNodes,
       info.fragments,
-      info.operation.variableDefinitions,
-    );
+      info.operation ? info.operation.variableDefinitions : [],
+    )
 
     const operationDefinition = document.definitions.find(
       ({ kind }) => kind === Kind.OPERATION_DEFINITION,
