@@ -326,9 +326,9 @@ graphql-playground-middleware-express@^1.1.4:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/graphql-playground-middleware-express/-/graphql-playground-middleware-express-1.1.4.tgz#487aaa7333feb8411edd3d6ca361dc08de471e3b"
 
-graphql-remote-tmp@^0.0.4-alpha.21:
-  version "0.0.4-alpha.21"
-  resolved "https://registry.yarnpkg.com/graphql-remote-tmp/-/graphql-remote-tmp-0.0.4-alpha.21.tgz#5768054c6e8aa5a50cbfa1ad2b6b524007302c65"
+graphql-remote@^0.1.0:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/graphql-remote/-/graphql-remote-0.1.1.tgz#3dff639f8df96df65245aa7895fbbc7674a12a0a"
   dependencies:
     apollo-link "^1.0.3"
     apollo-link-http "^1.2.0"
@@ -366,9 +366,9 @@ graphql-tools@^2.7.2:
     deprecated-decorator "^0.1.6"
     uuid "^3.1.0"
 
-graphql-yoga@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/graphql-yoga/-/graphql-yoga-0.1.0.tgz#020b5b4083a28ca5178e4842a61cb7f44aac8f4f"
+graphql-yoga@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/graphql-yoga/-/graphql-yoga-0.1.1.tgz#3d8b4d805f281e9d13e18f73f92540f7aa788541"
   dependencies:
     "@types/cors" "^2.8.3"
     "@types/express" "^4.0.39"

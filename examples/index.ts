@@ -12,6 +12,13 @@ async function run() {
     type Query {
       me: User
     }
+    type Mutation {
+      signup(email: String!, password: String!): AuthPayload
+    }
+    type AuthPayload {
+      token: String!
+      user: User!
+    }
     type Subscription {
       Post: PostSubscriptionPayload
     }
@@ -23,7 +30,6 @@ async function run() {
       allPosts: [Post!]!
       comments(filter: CommentFilter): [Comment!]
     }
-    
     input CommentFilter {
       text_not: String
     }
@@ -39,8 +45,31 @@ async function run() {
         return ctx.graphcool.delegateQuery('User', { id: userId }, {}, info)
       },
     },
+    Mutation: {
+      signup: async (parent, args, ctx, info) => {
+        const mutation = `
+        mutation ($email: String!, $password: String!) {
+          createUser(email: $email, password: $password) {
+            id
+            createdAt
+            email
+            password
+            name
+          }
+        }`
+        const result = await ctx.graphcool.request(mutation, args)
+        return result.createUser
+      },
+    },
+    AuthPayload: {
+      token: parent => {
+        const jwtTokenPayload = { userId: parent.id }
+        return jwt.sign(jwtTokenPayload, process.env.JWT_SECRET!)
+      },
+      user: parent => parent
+    },
     Post: {
-      title: (parent) =>  {
+      title: (parent) => {
         return parent.title + ' - Post Title'
       },
       extra: () => 'extra field',

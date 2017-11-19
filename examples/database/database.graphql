@@ -1,6 +1,5 @@
 type User @model {
   id: ID! @isUnique
-  #name: String!
   createdAt: DateTime!
 
   name: String
