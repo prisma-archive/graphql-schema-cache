@@ -27,7 +27,7 @@ interface ExecuteInput {
   variableValues?: any
 }
 
-export class RemoteSchema {
+export class Remote {
   private mergeInfo: MergeInfo
   private options?: Options
   private clientSchema: GraphQLSchema
