@@ -1,9 +1,9 @@
+import { introspectSchema, makeExecutableSchema } from 'graphql-tools'
 import {
-  introspectSchema,
-  makeExecutableSchema,
-} from 'graphql-tools'
-import {
-  DocumentNode, execute, ExecutionResult, graphql,
+  DocumentNode,
+  execute,
+  ExecutionResult,
+  graphql,
   GraphQLResolveInfo,
   GraphQLSchema,
   Kind,
@@ -19,9 +19,9 @@ import { createDocument } from './utils'
 import { checkResultAndHandleErrors } from './errors'
 import TypeRegistry from 'graphql-tools/dist/stitching/TypeRegistry'
 export { Options } from 'batched-graphql-request/dist/src/types'
-import {$$asyncIterator} from 'iterall'
+import { $$asyncIterator } from 'iterall'
 
-const cache: {[key: string]: GraphQLSchema} = {}
+const cache: { [key: string]: GraphQLSchema } = {}
 
 interface ExecuteInput {
   document: DocumentNode
@@ -36,19 +36,26 @@ export class Remote {
   private link: HybridLink
   private fragments?: string
   private typeRegistry: TypeRegistry
-  private initPromise: Promise<void>
+  private initPromise: Promise<void> = Promise.resolve()
 
-  constructor(linkOrSchema: HybridLink | GraphQLSchema, options?: { fragments?: any, typeDefs?: string }) {
+  constructor(
+    linkOrSchema: HybridLink | GraphQLSchema,
+    options?: { fragments?: any; typeDefs?: string },
+  ) {
     this.fragments = options.fragments
     this.typeRegistry = new TypeRegistry()
 
     if (linkOrSchema instanceof HybridLink) {
-      if (options.typeDefs) {
-        cache[linkOrSchema.uri] = makeExecutableSchema({ typeDefs: options.typeDefs })
-      }
-
       if (!cache[linkOrSchema.uri]) {
-        throw new TypeError(`Missing typeDefs for url ${linkOrSchema.uri}. Please first execute 'await fetchTypeDefs()'`)
+        if (options.typeDefs) {
+          cache[linkOrSchema.uri] = makeExecutableSchema({
+            typeDefs: options.typeDefs,
+          })
+        } else {
+          throw new TypeError(
+            `Missing typeDefs for url ${linkOrSchema.uri}. Please first execute 'await fetchTypeDefs()'`,
+          )
+        }
       }
 
       this.link = linkOrSchema
@@ -69,7 +76,8 @@ export class Remote {
         return resolve()
       }
 
-      this.clientSchema = cache[this.link.uri] || await introspectSchema(this.link)
+      this.clientSchema =
+        cache[this.link.uri] || (await introspectSchema(this.link))
       this.remoteSchema = createRemoteSchema(this.clientSchema, this.link)
 
       resolve()
@@ -86,7 +94,11 @@ export class Remote {
     })
   }
 
-  request<T>(query: string, variables?: Variables, operationName?: string): Promise<T> {
+  request<T>(
+    query: string,
+    variables?: Variables,
+    operationName?: string,
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
       return graphql(this.remoteSchema, query, {}, {}, variables, operationName)
         .then(res => {
@@ -101,7 +113,13 @@ export class Remote {
     })
   }
 
-  private prepareDelegate(operation: 'query' | 'mutation' | 'subscription', fieldName: string, args: {[key: string]: any}, context: {[key: string]: any}, info: GraphQLResolveInfo): ExecuteInput {
+  private prepareDelegate(
+    operation: 'query' | 'mutation' | 'subscription',
+    fieldName: string,
+    args: { [key: string]: any },
+    context: { [key: string]: any },
+    info: GraphQLResolveInfo,
+  ): ExecuteInput {
     let type
     if (operation === 'query') {
       type = this.remoteSchema.getQueryType()
@@ -128,34 +146,45 @@ export class Remote {
 
     const operationDefinition = document.definitions.find(
       ({ kind }) => kind === Kind.OPERATION_DEFINITION,
-    );
-    let variableValues = {};
+    )
+    let variableValues = {}
     if (
       operationDefinition &&
       operationDefinition.kind === Kind.OPERATION_DEFINITION &&
       operationDefinition.variableDefinitions
     ) {
       operationDefinition.variableDefinitions.forEach(definition => {
-        const key = definition.variable.name.value;
+        const key = definition.variable.name.value
         // (XXX) This is kinda hacky
-        let actualKey = key;
+        let actualKey = key
         if (actualKey.startsWith('_')) {
-          actualKey = actualKey.slice(1);
+          actualKey = actualKey.slice(1)
         }
-        const value = args[actualKey] || args[key] || info.variableValues[key];
-        variableValues[key] = value;
-      });
+        const value = args[actualKey] || args[key] || info.variableValues[key]
+        variableValues[key] = value
+      })
     }
-
 
     return {
       document,
-      variableValues
+      variableValues,
     }
   }
 
-  private async delegate(operation: 'query' | 'mutation' | 'subscription', fieldName: string, args: {[key: string]: any}, context: {[key: string]: any}, info: GraphQLResolveInfo): Promise<ExecutionResult> {
-    const {document, variableValues} = this.prepareDelegate(operation, fieldName, args, context, info)
+  private async delegate(
+    operation: 'query' | 'mutation' | 'subscription',
+    fieldName: string,
+    args: { [key: string]: any },
+    context: { [key: string]: any },
+    info: GraphQLResolveInfo,
+  ): Promise<ExecutionResult> {
+    const { document, variableValues } = this.prepareDelegate(
+      operation,
+      fieldName,
+      args,
+      context,
+      info,
+    )
 
     const result = await execute(
       this.remoteSchema,
@@ -164,46 +193,67 @@ export class Remote {
       context,
       variableValues,
     )
-    return checkResultAndHandleErrors(result, info, fieldName);
+    return checkResultAndHandleErrors(result, info, fieldName)
   }
 
-  async delegateQuery(fieldName: string, args: Args, context: Context, info: GraphQLResolveInfo): Promise<ExecutionResult> {
+  async delegateQuery(
+    fieldName: string,
+    args: Args,
+    context: Context,
+    info: GraphQLResolveInfo,
+  ): Promise<ExecutionResult> {
     await this.initPromise
     return this.delegate('query', fieldName, args, context, info)
   }
 
-  async delegateMutation(fieldName: string, args: Args, context: Context, info: GraphQLResolveInfo): Promise<ExecutionResult> {
+  async delegateMutation(
+    fieldName: string,
+    args: Args,
+    context: Context,
+    info: GraphQLResolveInfo,
+  ): Promise<ExecutionResult> {
     await this.initPromise
     return this.delegate('mutation', fieldName, args, context, info)
   }
 
-  async delegateSubscription(fieldName: string, args: Args, context: Context, info: GraphQLResolveInfo): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
+  async delegateSubscription(
+    fieldName: string,
+    args: Args,
+    context: Context,
+    info: GraphQLResolveInfo,
+  ): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
     await this.initPromise
-    const {document, variableValues} = this.prepareDelegate('subscription', fieldName, args, context, info)
+    const { document, variableValues } = this.prepareDelegate(
+      'subscription',
+      fieldName,
+      args,
+      context,
+      info,
+    )
 
-    const iterator = await subscribe(
+    const iterator = (await subscribe(
       this.remoteSchema,
       document,
       info.rootValue,
       context,
       variableValues,
-    ) as any
+    )) as any
 
     return {
       async next() {
-        const {value} = await iterator.next()
-        return {value: value.data, done: false}
+        const { value } = await iterator.next()
+        return { value: value.data, done: false }
       },
       return() {
         return Promise.resolve({ value: undefined, done: true })
       },
       throw(error) {
-        return Promise.reject(error);
+        return Promise.reject(error)
       },
       [$$asyncIterator]() {
-        return this;
+        return this
       },
-    };
+    }
   }
 }
 
