@@ -1,6 +1,12 @@
 import {
-  DefinitionNode, DocumentNode, GraphQLSchema, ObjectTypeDefinitionNode, parse, printSchema, print,
-  buildSchema
+  DefinitionNode,
+  DocumentNode,
+  GraphQLSchema,
+  ObjectTypeDefinitionNode,
+  parse,
+  printSchema,
+  print,
+  buildSchema,
 } from 'graphql'
 import { builtinTypes, DefinitionMap } from './types'
 import * as _ from 'lodash'
@@ -41,14 +47,13 @@ class TypeDefsCollector {
     return print(customSchemaAst)
   }
 
-
   private patchMissingTypes(
     definitionsAst: DocumentNode,
     schemaAst: DocumentNode,
   ) {
     const schemaMap: DefinitionMap = _.keyBy(
       schemaAst.definitions,
-      (d: any) => d.name.value,
+      (d: any) => d.name.value as string,
     )
     definitionsAst.definitions.forEach(def =>
       this.patchDefinition(definitionsAst, def, schemaMap),
@@ -104,7 +109,7 @@ class TypeDefsCollector {
           ) {
             const schemaType: ObjectTypeDefinitionNode = schemaMap[
               typeName
-              ] as ObjectTypeDefinitionNode
+            ] as ObjectTypeDefinitionNode
             if (!schemaType) {
               throw new Error(
                 `Field ${field.name
@@ -136,4 +141,3 @@ class TypeDefsCollector {
     }
   }
 }
-

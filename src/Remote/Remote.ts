@@ -1,5 +1,6 @@
 import {
   introspectSchema,
+  makeExecutableSchema,
 } from 'graphql-tools'
 import {
   DocumentNode, execute, ExecutionResult, graphql,
@@ -37,20 +38,28 @@ export class Remote {
   private typeRegistry: TypeRegistry
   private initPromise: Promise<void>
 
-  constructor(linkOrSchema: HybridLink | GraphQLSchema, fragments?: any) {
-    this.fragments = fragments
+  constructor(linkOrSchema: HybridLink | GraphQLSchema, options?: { fragments?: any, typeDefs?: string }) {
+    this.fragments = options.fragments
     this.typeRegistry = new TypeRegistry()
+
     if (linkOrSchema instanceof HybridLink) {
+      if (options.typeDefs) {
+        cache[linkOrSchema.uri] = makeExecutableSchema({ typeDefs: options.typeDefs })
+      }
+
       if (!cache[linkOrSchema.uri]) {
         throw new TypeError(`Missing typeDefs for url ${linkOrSchema.uri}. Please first execute 'await fetchTypeDefs()'`)
       }
+
       this.link = linkOrSchema
     } else {
       this.remoteSchema = linkOrSchema
     }
-    if (fragments) {
-      this.addFragments(fragments)
+
+    if (options.fragments) {
+      this.addFragments(options.fragments)
     }
+
     this.initPromise = this.init()
   }
 

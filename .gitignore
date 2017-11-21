@@ -4,3 +4,4 @@ dist
 .DS_Store
 .envrc
 .graphcoolrc
+package-lock.json
