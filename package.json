@@ -1,11 +1,14 @@
 {
   "name": "graphql-remote",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "typescript": {
     "definition": "dist/index.d.ts"
   },
+  "files": [
+    "dist"
+  ],
   "repository": "git@github.com:graphcool/graphql-remote.git",
   "author": "Tim Suchanek <tim.suchanek@gmail.com>",
   "license": "MIT",
