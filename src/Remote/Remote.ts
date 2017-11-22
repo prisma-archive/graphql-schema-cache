@@ -13,7 +13,7 @@ import {
 import { MergeInfo } from 'graphql-tools/dist/stitching/mergeSchemas'
 import { Options, Variables } from 'batched-graphql-request/dist/src/types'
 import { HybridLink } from '../HybridLink'
-import { createRemoteSchema } from './createRemoteSchema'
+import { RemoteSchemaFactory } from './RemoteSchemaFactory'
 import { Args, Context } from '../types'
 import { createDocument } from './utils'
 import { checkResultAndHandleErrors } from './errors'
@@ -28,6 +28,8 @@ interface ExecuteInput {
   variableValues?: any
 }
 
+let remoteSchemaFactory: RemoteSchemaFactory
+
 export class Remote {
   private mergeInfo: MergeInfo
   private options?: Options
@@ -37,6 +39,7 @@ export class Remote {
   private fragments?: string
   private typeRegistry: TypeRegistry
   private initPromise: Promise<void> = Promise.resolve()
+  private start: number
 
   constructor(
     linkOrSchema: HybridLink | GraphQLSchema,
@@ -44,6 +47,7 @@ export class Remote {
   ) {
     this.fragments = options.fragments
     this.typeRegistry = new TypeRegistry()
+    this.start = Date.now()
 
     if (linkOrSchema instanceof HybridLink) {
       if (!cache[linkOrSchema.uri]) {
@@ -76,9 +80,13 @@ export class Remote {
         return resolve()
       }
 
-      this.clientSchema =
-        cache[this.link.uri] || (await introspectSchema(this.link))
-      this.remoteSchema = createRemoteSchema(this.clientSchema, this.link)
+      this.clientSchema = cache[this.link.uri] || (await introspectSchema(this.link))
+      if (!remoteSchemaFactory) {
+        remoteSchemaFactory = new RemoteSchemaFactory(this.clientSchema, this.link)
+      } else {
+        remoteSchemaFactory.setLink(this.link)
+      }
+      this.remoteSchema = remoteSchemaFactory.getSchema()
 
       resolve()
     })

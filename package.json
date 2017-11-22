@@ -1,6 +1,6 @@
 {
   "name": "graphql-remote",
-  "version": "0.1.4",
+  "version": "0.1.6-alpha.1",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "typescript": {

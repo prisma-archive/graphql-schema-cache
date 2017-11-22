@@ -10,7 +10,7 @@ import {
   Observable,
   FetchResult,
 } from 'apollo-link';
-import { Fetcher, FetcherOperation, Observer } from './createRemoteSchema'
+import { Fetcher, FetcherOperation, Observer } from './RemoteSchemaFactory'
 
 export function linkToFetcher(link: ApolloLink): Fetcher {
   return (fetcherOperation: FetcherOperation) => {

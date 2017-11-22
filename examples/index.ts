@@ -1,5 +1,5 @@
 import { GraphQLServer } from 'graphql-yoga'
-import { fetchTypeDefs, RemoteSchema, collectTypeDefs, GraphcoolLink } from 'graphql-remote'
+import { fetchTypeDefs, Remote, collectTypeDefs, GraphcoolLink } from '../src'
 import * as jwt from 'jsonwebtoken'
 
 async function run() {
@@ -11,6 +11,7 @@ async function run() {
   const typeDefs = collectTypeDefs(graphcoolTypeDefs, `
     type Query {
       me: User
+      posts: [Post!]!
     }
     type Mutation {
       signup(email: String!, password: String!): AuthPayload
@@ -42,8 +43,11 @@ async function run() {
         const { userId } = jwt.verify(token, process.env.JWT_SECRET!) as {
           userId: string
         }
-        return ctx.graphcool.delegateQuery('User', { id: userId }, {}, info)
+        return ctx.remote.delegateQuery('User', { id: userId }, {}, info)
       },
+      posts: (parent, args, ctx, info) => {
+        return ctx.remote.delegateQuery('allPosts', {}, {}, info)
+      }
     },
     Mutation: {
       signup: async (parent, args, ctx, info) => {
@@ -57,7 +61,7 @@ async function run() {
             name
           }
         }`
-        const result = await ctx.graphcool.request(mutation, args)
+        const result = await ctx.remote.request(mutation, args)
         return result.createUser
       },
     },
@@ -74,13 +78,13 @@ async function run() {
       },
       extra: () => 'extra field',
       allPosts: (_, _2, ctx, info) => {
-        return ctx.graphcool.delegateQuery('allPosts', {}, {}, info)
+        return ctx.remote.delegateQuery('allPosts', {}, {}, info)
       }
     },
     Subscription: {
       Post: {
         subscribe: async (parent, args, ctx, info) => {
-          return ctx.graphcool.delegateSubscription('Post', args, ctx, info)
+          return ctx.remote.delegateSubscription('Post', args, ctx, info)
         },
       },
     },
@@ -89,7 +93,10 @@ async function run() {
   const server = new GraphQLServer({
     typeDefs,
     resolvers,
-    context: params => ({ ...params, graphcool: new RemoteSchema(makeLink()) }),
+    options: {
+      port: 3500,
+    },
+    context: params => ({ ...params, remote: new Remote(makeLink(), {typeDefs}) })
   })
 
   server.start().then(() => console.log('Server is running on :4000'))
