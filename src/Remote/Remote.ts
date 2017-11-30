@@ -9,6 +9,10 @@ import {
   Kind,
   printSchema,
   subscribe,
+  InlineFragmentNode,
+  print,
+  FieldNode,
+  OperationDefinitionNode,
 } from 'graphql'
 import { MergeInfo } from 'graphql-tools/dist/stitching/mergeSchemas'
 import { Options, Variables } from 'batched-graphql-request/dist/src/types'
@@ -22,11 +26,6 @@ export { Options } from 'batched-graphql-request/dist/src/types'
 import { $$asyncIterator } from 'iterall'
 
 const cache: { [key: string]: GraphQLSchema } = {}
-
-interface ExecuteInput {
-  document: DocumentNode
-  variableValues?: any
-}
 
 let remoteSchemaFactory: RemoteSchemaFactory
 
@@ -57,7 +56,9 @@ export class Remote {
           })
         } else {
           throw new TypeError(
-            `Missing typeDefs for url ${linkOrSchema.uri}. Please first execute 'await fetchTypeDefs()'`,
+            `Missing typeDefs for url ${
+              linkOrSchema.uri
+            }. Please first execute 'await fetchTypeDefs()'`,
           )
         }
       }
@@ -80,9 +81,13 @@ export class Remote {
         return resolve()
       }
 
-      this.clientSchema = cache[this.link.uri] || (await introspectSchema(this.link))
+      this.clientSchema =
+        cache[this.link.uri] || (await introspectSchema(this.link))
       if (!remoteSchemaFactory) {
-        remoteSchemaFactory = new RemoteSchemaFactory(this.clientSchema, this.link)
+        remoteSchemaFactory = new RemoteSchemaFactory(
+          this.clientSchema,
+          this.link,
+        )
       } else {
         remoteSchemaFactory.setLink(this.link)
       }
@@ -121,62 +126,12 @@ export class Remote {
     })
   }
 
-  private prepareDelegate(
-    operation: 'query' | 'mutation' | 'subscription',
-    fieldName: string,
-    args: { [key: string]: any },
-    context: { [key: string]: any },
-    info: GraphQLResolveInfo,
-  ): ExecuteInput {
-    let type
-    if (operation === 'query') {
-      type = this.remoteSchema.getQueryType()
-    } else if (operation === 'mutation') {
-      type = this.remoteSchema.getMutationType()
-    } else if (operation === 'subscription') {
-      type = this.remoteSchema.getSubscriptionType()
-    }
+  getTypeRegistry(): TypeRegistry {
+    return this.typeRegistry
+  }
 
-    if (!type) {
-      throw new TypeError('Could not forward to remote schema')
-    }
-
-    const document: DocumentNode = createDocument(
-      this.remoteSchema,
-      this.typeRegistry.fragmentReplacements,
-      type,
-      fieldName,
-      operation,
-      info.fieldNodes,
-      info.fragments,
-      info.operation ? info.operation.variableDefinitions : [],
-    )
-
-    const operationDefinition = document.definitions.find(
-      ({ kind }) => kind === Kind.OPERATION_DEFINITION,
-    )
-    let variableValues = {}
-    if (
-      operationDefinition &&
-      operationDefinition.kind === Kind.OPERATION_DEFINITION &&
-      operationDefinition.variableDefinitions
-    ) {
-      operationDefinition.variableDefinitions.forEach(definition => {
-        const key = definition.variable.name.value
-        // (XXX) This is kinda hacky
-        let actualKey = key
-        if (actualKey.startsWith('_')) {
-          actualKey = actualKey.slice(1)
-        }
-        const value = args[actualKey] || args[key] || info.variableValues[key]
-        variableValues[key] = value
-      })
-    }
-
-    return {
-      document,
-      variableValues,
-    }
+  getSchema(): GraphQLSchema {
+    return this.remoteSchema
   }
 
   private async delegate(
@@ -186,12 +141,14 @@ export class Remote {
     context: { [key: string]: any },
     info: GraphQLResolveInfo,
   ): Promise<ExecutionResult> {
-    const { document, variableValues } = this.prepareDelegate(
+    const { document, variableValues } = extractDocumentAndVariableValues(
       operation,
       fieldName,
       args,
       context,
       info,
+      this.remoteSchema,
+      this.typeRegistry.fragmentReplacements,
     )
 
     const result = await execute(
@@ -231,12 +188,14 @@ export class Remote {
     info: GraphQLResolveInfo,
   ): Promise<AsyncIterator<ExecutionResult> | ExecutionResult> {
     await this.initPromise
-    const { document, variableValues } = this.prepareDelegate(
+    const { document, variableValues } = extractDocumentAndVariableValues(
       'subscription',
       fieldName,
       args,
       context,
       info,
+      this.remoteSchema,
+      this.typeRegistry.fragmentReplacements,
     )
 
     const iterator = (await subscribe(
@@ -270,4 +229,90 @@ export async function fetchTypeDefs(link: HybridLink) {
   cache[link.uri] = schema
 
   return printSchema(schema)
+}
+
+export function extractDocumentAndVariableValues(
+  operation: 'query' | 'mutation' | 'subscription',
+  fieldName: string,
+  args: { [key: string]: any },
+  context: { [key: string]: any },
+  info: GraphQLResolveInfo,
+  remoteSchema: GraphQLSchema,
+  fragmentReplacements: {
+    [typeName: string]: {
+      [fieldName: string]: InlineFragmentNode
+    }
+  },
+): {
+  document: DocumentNode
+  variableValues?: any
+} {
+  let type
+  if (operation === 'query') {
+    type = remoteSchema.getQueryType()
+  } else if (operation === 'mutation') {
+    type = remoteSchema.getMutationType()
+  } else if (operation === 'subscription') {
+    type = remoteSchema.getSubscriptionType()
+  }
+
+  if (!type) {
+    throw new TypeError('Could not forward to remote schema')
+  }
+
+  const document: DocumentNode = createDocument(
+    remoteSchema,
+    fragmentReplacements,
+    type,
+    fieldName,
+    operation,
+    info.fieldNodes,
+    info.fragments,
+    info.operation ? info.operation.variableDefinitions : [],
+  )
+
+  const operationDefinition = document.definitions.find(
+    ({ kind }) => kind === Kind.OPERATION_DEFINITION,
+  ) as OperationDefinitionNode
+  let variableValues = {}
+  if (operationDefinition && operationDefinition.variableDefinitions) {
+    operationDefinition.variableDefinitions.forEach(definition => {
+      const key = definition.variable.name.value
+      // (XXX) This is kinda hacky
+      let actualKey = key
+      if (actualKey.startsWith('_')) {
+        actualKey = actualKey.slice(1)
+      }
+      const value = args[actualKey] || args[key] || info.variableValues[key]
+      variableValues[key] = value
+    })
+  }
+
+  // override arguments
+  if (operationDefinition) {
+    // implement just for root level (mutations) for now
+    operationDefinition.selectionSet.selections
+      .filter(s => s.kind === Kind.FIELD)
+      .forEach((field: FieldNode) => {
+        field.arguments.forEach(arg => {
+          const newValue = args[arg.name.value]
+          if (newValue === null) {
+            arg.value = { kind: 'NullValue' }
+          } else if (
+            newValue !== undefined &&
+            arg.value.kind !== 'Variable' &&
+            arg.value.kind !== 'ObjectValue' &&
+            arg.value.kind !== 'NullValue' &&
+            arg.value.kind !== 'ListValue'
+          ) {
+            arg.value.value = newValue
+          }
+        })
+      })
+  }
+
+  return {
+    document,
+    variableValues,
+  }
 }
