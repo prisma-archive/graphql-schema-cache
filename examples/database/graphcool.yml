@@ -1,7 +1,0 @@
-types: ./database.graphql
-
-permissions:
-  - operation: "*"
-
-rootTokens: 
-  - token1
