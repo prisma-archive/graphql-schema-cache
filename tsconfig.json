@@ -5,7 +5,8 @@
     "module": "commonjs",
     "sourceMap": true,
     "rootDir": "./src",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "lib": ["esnext"]
   },
   "exclude": ["node_modules", "dist", "example"]
 }
