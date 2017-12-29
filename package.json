@@ -1,6 +1,6 @@
 {
   "name": "graphql-schema-cache",
-  "version": "0.3.2",
+  "version": "0.0.0-semantic-release",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "typescript": {
@@ -14,7 +14,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc -d",
-    "prepublishOnly": "yarn build"
+    "prepare": "yarn build",
+    "test": "echo No tests yet"
   },
   "peerDependencies": {
     "graphql": "^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0",
