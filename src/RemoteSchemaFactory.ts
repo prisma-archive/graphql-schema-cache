@@ -41,7 +41,6 @@ import {
   ValueNode,
 } from 'graphql'
 import { ApolloLink } from 'apollo-link'
-import { Observable } from 'subscriptions-transport-ws'
 import { makeExecutableSchema } from 'graphql-tools'
 import linkToFetcher from 'graphql-tools/dist/stitching/linkToFetcher'
 import defaultMergedResolver from 'graphql-tools/dist/stitching/defaultMergedResolver'
@@ -64,14 +63,12 @@ export type FetcherOperation = {
  * without the need to re-run `makeExecutableSchema` which is expensive to run
  */
 export class ExecutableSchemaFactory {
-  private link: ApolloLink
   private fetcher: Fetcher
   private introspectionSchema: GraphQLSchema
   private executableSchema: GraphQLSchema
 
   constructor(introspectionSchema: GraphQLSchema, link: ApolloLink) {
     this.introspectionSchema = introspectionSchema
-    this.link = link
     this.fetcher = linkToFetcher(link)
     this.init()
   }
@@ -81,7 +78,6 @@ export class ExecutableSchemaFactory {
   }
 
   setLink(link: ApolloLink): void {
-    this.link = link
     this.fetcher = linkToFetcher(link)
   }
 
