@@ -3,5 +3,6 @@ dist
 .idea
 .DS_Store
 .envrc
+*.log
 .graphcoolrc
 package-lock.json
