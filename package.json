@@ -18,7 +18,7 @@
     "test": "echo No tests yet"
   },
   "peerDependencies": {
-    "graphql": "^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0",
+    "graphql": "^0.12.0",
     "graphql-tools": "^2.4.0"
   },
   "dependencies": {
