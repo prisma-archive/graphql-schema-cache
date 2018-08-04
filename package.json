@@ -18,16 +18,16 @@
     "test": "echo No tests yet"
   },
   "peerDependencies": {
-    "graphql": "^0.12.0",
+    "graphql": "^0.12.0 || ^0.13.0",
     "graphql-tools": "^2.4.0"
   },
   "dependencies": {
     "apollo-link": "^1.0.7",
-    "graphql": "^0.12.3",
+    "graphql": "^0.13.0",
     "graphql-tools": "^2.14.0"
   },
   "devDependencies": {
-    "@types/graphql": "0.11.7",
+    "@types/graphql": "0.13.4",
     "@types/node": "8.5.2",
     "typescript": "2.6.2"
   }
